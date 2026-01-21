@@ -30,6 +30,12 @@ const userSchema = new Schema(
         ref: "Album",
       },
     ],
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user"
+}
+
   },
   { timestamps: true }
 );
