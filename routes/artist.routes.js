@@ -3,6 +3,8 @@ const router = require("express").Router();
 const ArtistModel = require("../models/Artist.model");
 const { isAuthenticated } = require("../middlewares/jwt.middleware");
 const { isAdmin } = require("../middlewares/isAdmin");
+const Album = require("../models/Album.model");
+
 
 // CREATE artist (admin only)
 router.post("/", isAuthenticated, isAdmin, async (req, res) => {
@@ -37,6 +39,19 @@ router.get("/:artistId", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ errorMessage: "Error fetching artist" });
+  }
+});
+
+// GET /artists/:artistId/albums
+router.get("/:artistId/albums", async (req, res) => {
+  try {
+    const { artistId } = req.params;
+
+    const albums = await Album.find({ artist: artistId });
+
+    res.json(albums);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching albums for artist" });
   }
 });
 

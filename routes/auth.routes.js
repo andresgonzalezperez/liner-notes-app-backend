@@ -95,19 +95,15 @@ router.post("/login", async (req, res) => {
 // VERIFY TOKEN
 router.get("/verify", isAuthenticated, async (req, res) => {
   try {
-    const currentUser = await UserModel.findById(req.payload._id).select(
-      "-password -email"
-    );
+    const currentUser = await UserModel.findById(req.payload._id).select("-password");
 
-    res.status(200).json({
-      message: "Token is valid",
-      user: currentUser,
-    });
+    res.status(200).json(currentUser);
 
   } catch (error) {
     console.log(error);
     res.status(500).json({ errorMessage: "Internal server error" });
   }
 });
+
 
 module.exports = router;
