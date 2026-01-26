@@ -13,19 +13,17 @@ router.post("/signup", async (req, res) => {
     if (!username || !email || !password) {
       return res.status(400).json({ errorMessage: "All fields are required." });
     }
+
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if the user exist
     const userAlreadyInDB = await UserModel.findOne({ email: normalizedEmail });
     if (userAlreadyInDB) {
       return res.status(403).json({ errorMessage: "Email already in use." });
     }
 
-    // Hash the password
     const salt = bcryptjs.genSaltSync(12);
     const hashedPassword = bcryptjs.hashSync(password, salt);
 
-    // Create User
     const createdUser = await UserModel.create({
       username,
       email: normalizedEmail,
@@ -33,11 +31,11 @@ router.post("/signup", async (req, res) => {
       avatar: avatar || "",
     });
 
-  
     res.status(201).json({
       _id: createdUser._id,
       username: createdUser.username,
       avatar: createdUser.avatar,
+      role: createdUser.role, 
     });
 
   } catch (error) {
@@ -45,7 +43,6 @@ router.post("/signup", async (req, res) => {
     res.status(500).json({ errorMessage: "Internal server error" });
   }
 });
-
 
 // LOGIN
 router.post("/login", async (req, res) => {
@@ -64,11 +61,11 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ errorMessage: "Invalid credentials." });
     }
 
-    // Create user
-    const payload = { 
-        _id: userInDB._id,
-        role: userInDB.role
-     };
+    const payload = {
+      _id: userInDB._id,
+      role: userInDB.role,
+    };
+
     const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
       algorithm: "HS256",
       expiresIn: "6h",
@@ -81,7 +78,7 @@ router.post("/login", async (req, res) => {
         _id: userInDB._id,
         username: userInDB.username,
         avatar: userInDB.avatar,
-        role: userInDB.role
+        role: userInDB.role,
       },
     });
 
@@ -91,11 +88,13 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
 // VERIFY TOKEN
 router.get("/verify", isAuthenticated, async (req, res) => {
   try {
-    const currentUser = await UserModel.findById(req.payload._id).select("-password");
+    const currentUser = await UserModel.findById(req.payload._id)
+      .select("-password")
+      .populate("favoriteAlbums")
+      .populate("favoriteArtists");
 
     res.status(200).json(currentUser);
 
@@ -107,3 +106,4 @@ router.get("/verify", isAuthenticated, async (req, res) => {
 
 
 module.exports = router;
+

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { Schema, model } = require("mongoose");
 
 const userSchema = new Schema(
@@ -24,20 +25,26 @@ const userSchema = new Schema(
       type: String,
       default: "",
     },
-    favorites: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Album",
-      },
+    favoriteAlbums: [
+      { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Album" 
+      }
     ],
+    favoriteArtists: [
+      { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Artist" 
+      }
+    ],
+
     role: {
       type: String,
       enum: ["user", "admin"],
-      default: "user"
-}
-
+      default: "user",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = model("User", userSchema);

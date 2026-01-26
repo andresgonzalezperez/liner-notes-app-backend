@@ -17,17 +17,17 @@ require("./config")(app);
 const authRoutes = require("./routes/auth.routes");
 app.use("/auth", authRoutes);
 
-// Artist routes
+// Artist route
 const artistRoutes = require("./routes/artist.routes");
 app.use("/artists", artistRoutes);
 
-// Album routes
+// Album route
 const albumRoutes = require("./routes/album.routes");
 app.use("/albums", albumRoutes);
 
-// Review routes
-const reviewRoutes = require("./routes/review.routes");
-app.use("/reviews", reviewRoutes);
+// User route
+const userRoutes = require("./routes/users.routes");
+app.use("/users", userRoutes);
 
 // ❗ To handle errors. Routes that don't exist or errors that you handle in specific routes
 require("./error-handling")(app);

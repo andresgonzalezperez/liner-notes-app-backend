@@ -19,10 +19,18 @@ const artistSchema = new Schema(
       type: String,
       default: "",
     },
+    reviews: [
+      {
+        user: { type: Schema.Types.ObjectId, ref: "User" },
+        comment: { type: String, required: true },
+        rating: { type: Number, min: 1, max: 5, required: true },
+        date: { type: Date, default: Date.now },
+      }
+    ]
   },
   { timestamps: true }
 );
 
- const Artist = model("Artist", artistSchema);
+const Artist = model("Artist", artistSchema);
 
- module.exports = Artist;
+module.exports = Artist;
