@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Album = require("../models/Album.model");
+const Artist = require("../models/Artist.model");
 const { isAuthenticated } = require("../middlewares/jwt.middleware");
 const { isAdmin } = require("../middlewares/isAdmin");
 const uploader = require("../middlewares/cloudinary.config.js");
@@ -39,11 +40,19 @@ router.get("/:id", async (req, res) => {
 router.post("/", isAuthenticated, isAdmin, async (req, res) => {
   try {
     const newAlbum = await Album.create(req.body);
-    res.json(newAlbum);
+    await Artist.findByIdAndUpdate(
+      req.body.artist,       
+      { $push: { albums: newAlbum._id } }
+    );
+
+    res.status(201).json(newAlbum);
+
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Error creating album" });
   }
 });
+
 
 // UPDATE album (admin only)
 router.put("/:id", isAuthenticated, isAdmin, async (req, res) => {

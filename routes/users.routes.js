@@ -6,7 +6,9 @@ const { isAdmin } = require("../middlewares/isAdmin.js");
 const uploader = require("../middlewares/cloudinary.config.js");
 
 
+// --------------------------------------------------
 // GET ALL USERS (admin only)
+// --------------------------------------------------
 router.get("/", isAuthenticated, isAdmin, async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -16,7 +18,10 @@ router.get("/", isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
+
+// --------------------------------------------------
 // GET ONE USER (admin or the user themself)
+// --------------------------------------------------
 router.get("/:id", isAuthenticated, async (req, res) => {
   try {
     if (req.payload._id !== req.params.id && req.payload.role !== "admin") {
@@ -36,7 +41,70 @@ router.get("/:id", isAuthenticated, async (req, res) => {
   }
 });
 
+
+// --------------------------------------------------
+// ADMIN — UPDATE ANY USER (username, email, role, password)
+// --------------------------------------------------
+router.patch("/:id", isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const { username, email, password, role } = req.body;
+    const { id } = req.params;
+
+    const updates = {};
+
+    // Validate username uniqueness
+    if (username) {
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername && existingUsername._id.toString() !== id) {
+        return res.status(400).json({ message: "USERNAME_EXISTS" });
+      }
+      updates.username = username;
+    }
+
+    // Validate email uniqueness
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+      const existingEmail = await User.findOne({ email: normalizedEmail });
+      if (existingEmail && existingEmail._id.toString() !== id) {
+        return res.status(400).json({ message: "EMAIL_EXISTS" });
+      }
+      updates.email = normalizedEmail;
+    }
+
+    // Update role
+    if (role) {
+      if (!["admin", "user"].includes(role)) {
+        return res.status(400).json({ message: "INVALID_ROLE" });
+      }
+      updates.role = role;
+    }
+
+    // Update password if provided
+    if (password && password.trim() !== "") {
+      const salt = bcrypt.genSaltSync(12);
+      updates.password = bcrypt.hashSync(password, salt);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(id, updates, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "USER_NOT_FOUND" });
+    }
+
+    res.json({ message: "USER_UPDATED", user: updatedUser });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "INTERNAL_ERROR" });
+  }
+});
+
+
+// --------------------------------------------------
 // DELETE USER (admin only)
+// --------------------------------------------------
 router.delete("/:id", isAuthenticated, isAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
@@ -63,36 +131,10 @@ router.delete("/:id", isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
-// UPDATE USER ROLE (admin only)
-router.put("/:id/role", isAuthenticated, isAdmin, async (req, res) => {
-  try {
-    const { role } = req.body;
-    const { id } = req.params;
 
-    if (!["admin", "user"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
-    }
-
-    if (req.payload._id === id) {
-      return res.status(400).json({ message: "You cannot change your own role" });
-    }
-
-    if (role === "user") {
-      const adminCount = await User.countDocuments({ role: "admin" });
-      if (adminCount <= 1) {
-        return res.status(400).json({ message: "Cannot remove the last admin" });
-      }
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(id, { role }, { new: true });
-    res.json(updatedUser);
-
-  } catch (error) {
-    res.status(500).json({ message: "Error updating user role" });
-  }
-});
-
+// --------------------------------------------------
 // USER UPDATES THEIR OWN PROFILE (username + email)
+// --------------------------------------------------
 router.put("/:id/update", isAuthenticated, async (req, res) => {
   try {
     if (req.payload._id !== req.params.id) {
@@ -116,7 +158,10 @@ router.put("/:id/update", isAuthenticated, async (req, res) => {
   }
 });
 
+
+// --------------------------------------------------
 // USER CHANGES THEIR OWN PASSWORD
+// --------------------------------------------------
 router.put("/:id/change-password", isAuthenticated, async (req, res) => {
   try {
     if (req.payload._id !== req.params.id) {
@@ -144,7 +189,10 @@ router.put("/:id/change-password", isAuthenticated, async (req, res) => {
   }
 });
 
+
+// --------------------------------------------------
 // UPLOAD PROFILE PICTURE
+// --------------------------------------------------
 router.post(
   "/update-profile-picture/:userId",
   uploader.single("imageUrl"),
@@ -170,7 +218,10 @@ router.post(
   }
 );
 
+
+// --------------------------------------------------
 // FAVORITES — ADD / REMOVE ALBUM
+// --------------------------------------------------
 router.post("/:userId/favorites/albums/:albumId", isAuthenticated, async (req, res) => {
   try {
     if (req.payload._id !== req.params.userId) {
@@ -209,7 +260,10 @@ router.delete("/:userId/favorites/albums/:albumId", isAuthenticated, async (req,
   }
 });
 
+
+// --------------------------------------------------
 // FAVORITES — ADD / REMOVE ARTIST
+// --------------------------------------------------
 router.post("/:userId/favorites/artists/:artistId", isAuthenticated, async (req, res) => {
   try {
     if (req.payload._id !== req.params.userId) {
@@ -250,6 +304,7 @@ router.delete("/:userId/favorites/artists/:artistId", isAuthenticated, async (re
 
 
 module.exports = router;
+
 
 
 

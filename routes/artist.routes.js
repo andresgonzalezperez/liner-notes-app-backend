@@ -28,7 +28,9 @@ router.get("/", async (req, res) => {
 // GET one artist
 router.get("/:artistId", async (req, res) => {
   try {
-    const artist = await Artist.findById(req.params.artistId).populate({
+    const artist = await Artist.findById(req.params.artistId)
+    .populate("albums")
+    .populate({
       path: "reviews",
       populate: {
         path: "user",

@@ -11,19 +11,28 @@ router.post("/signup", async (req, res) => {
 
   try {
     if (!username || !email || !password) {
-      return res.status(400).json({ errorMessage: "All fields are required." });
+      return res.status(400).json({ message: "All fields are required." });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const userAlreadyInDB = await UserModel.findOne({ email: normalizedEmail });
-    if (userAlreadyInDB) {
-      return res.status(403).json({ errorMessage: "Email already in use." });
+    // Check if email already exists
+    const existingEmail = await UserModel.findOne({ email: normalizedEmail });
+    if (existingEmail) {
+      return res.status(400).json({ message: "EMAIL_EXISTS" });
     }
 
+    // Check if username already exists
+    const existingUsername = await UserModel.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "USERNAME_EXISTS" });
+    }
+
+    // Hash password
     const salt = bcryptjs.genSaltSync(12);
     const hashedPassword = bcryptjs.hashSync(password, salt);
 
+    // Create user
     const createdUser = await UserModel.create({
       username,
       email: normalizedEmail,
@@ -35,12 +44,12 @@ router.post("/signup", async (req, res) => {
       _id: createdUser._id,
       username: createdUser.username,
       avatar: createdUser.avatar,
-      role: createdUser.role, 
+      role: createdUser.role,
     });
 
   } catch (error) {
     console.log(error);
-    res.status(500).json({ errorMessage: "Internal server error" });
+    res.status(500).json({ message: "INTERNAL_ERROR" });
   }
 });
 
@@ -51,16 +60,19 @@ router.post("/login", async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
+    // Check if email exists
     const userInDB = await UserModel.findOne({ email: normalizedEmail });
     if (!userInDB) {
-      return res.status(403).json({ errorMessage: "Invalid credentials." });
+      return res.status(400).json({ message: "INVALID_CREDENTIALS" });
     }
 
+    // Check password
     const passwordMatch = bcryptjs.compareSync(password, userInDB.password);
     if (!passwordMatch) {
-      return res.status(403).json({ errorMessage: "Invalid credentials." });
+      return res.status(400).json({ message: "INVALID_CREDENTIALS" });
     }
 
+    // Create JWT payload
     const payload = {
       _id: userInDB._id,
       role: userInDB.role,
@@ -72,7 +84,7 @@ router.post("/login", async (req, res) => {
     });
 
     res.status(200).json({
-      message: "Login successful",
+      message: "LOGIN_SUCCESS",
       authToken,
       user: {
         _id: userInDB._id,
@@ -84,7 +96,7 @@ router.post("/login", async (req, res) => {
 
   } catch (error) {
     console.log(error);
-    res.status(500).json({ errorMessage: "Internal server error" });
+    res.status(500).json({ message: "INTERNAL_ERROR" });
   }
 });
 

@@ -19,6 +19,12 @@ const artistSchema = new Schema(
       type: String,
       default: "",
     },
+    albums: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Album"
+      }
+    ],
     reviews: [
       {
         user: { type: Schema.Types.ObjectId, ref: "User" },
@@ -30,6 +36,7 @@ const artistSchema = new Schema(
   },
   { timestamps: true }
 );
+
 
 const Artist = model("Artist", artistSchema);
 
